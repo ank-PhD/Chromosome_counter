@@ -3,18 +3,18 @@ __author__ = 'ank'
 import numpy as np
 import matplotlib.pyplot as plt
 import PIL
-from time import time
 import mdp
+from itertools import product
+from pickle import load, dump
+from os import path
+from time import time
 from skimage.segmentation import random_walker, mark_boundaries
 from skimage.morphology import convex_hull_image, label
-# from skimage.measure import label
 from skimage.filter import gaussian_filter
 from skimage.measure import perimeter
 from matplotlib import colors
 from pylab import get_cmap
-from itertools import product
-from pickle import load, dump
-from os import path
+# from skimage.measure import label
 
 debug = False
 

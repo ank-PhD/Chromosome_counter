@@ -1,0 +1,9 @@
+PIL
+numpy
+scipy
+matplotlib
+scikit-image
+scikit-learn
+mdp
+kivy
+pygame

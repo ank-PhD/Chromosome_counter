@@ -3,7 +3,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.progressbar import ProgressBar
 from kivy.uix.textinput import TextInput
 from kivy.utils import platform
-from configs import loop_dir, loop_fle, afterloop
+from core_app_methods import loop_dir, loop_fle, afterloop
 from kivy.properties import ObjectProperty
 
 import os
