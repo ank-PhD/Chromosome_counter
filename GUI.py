@@ -41,7 +41,7 @@ class MyWidget(BoxLayout):
             sleep(0.5)
         else:
             if filename:
-                t_to_add = '>>> will try to pre-process file %s at %s'%(filename, path)
+                t_to_add = '>>> will try to pre-process file %s at %s'%(filename[0].split('\\')[-1], path)
                 self.text_field.text = self.text_field.text+t_to_add+'\n'
                 self.text_field._update_graphics()
                 sleep(0.5)
