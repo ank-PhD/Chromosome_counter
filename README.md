@@ -59,8 +59,22 @@ you ASAP.
 
 Visual:
 -------
+GUI:
+
 ![alt tag](http://i.imgur.com/VcdJF2D.png)
+
+uncorrected Spread mask
+
 ![alt tag](http://i.imgur.com/gLC8bBE.png)
+
+corrected Spread Mask
+
 ![alt tag](http://i.imgur.com/ikUJLai.png)
+
+Clustering without correction
+
+![alt tag](http://i.imgur.com/wE3MxcP.png)
+
+Clustering with correction
+
 ![alt tag](http://i.imgur.com/1cE7g6Z.png)
-![alt tag](http://i.imgur.com/BRFhnIK.png)
