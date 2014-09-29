@@ -83,6 +83,7 @@ def cluster_by_diffusion(data):
 if __name__ == "__main__":
     start = time()
     bw = import_image()
+
     sum1, sum2, _, _= gabor(bw, 1/4., 0.5)
 
     # The separator is acting here:

@@ -16,9 +16,11 @@ def safe_mkdir(path):
 
 
 def count_images(path):
-    return len([name for name in os.listdir('.')
-                if os.path.isfile(name)
-                    and name.split('.')[-1] in ['jpeg', 'jpg', 'tif',' tiff']])
+    namelist = []
+    for name in os.listdir(path):
+        if os.path.isfile(os.path.join(path, name)) and name.split('.')[-1] in ['jpeg', 'jpg', 'tif',' tiff']:
+            namelist.append(name)
+    return len(namelist)
 
 
 def loop_dir(image_directory, progress_bar, text_field):
@@ -39,7 +41,7 @@ def loop_dir(image_directory, progress_bar, text_field):
             buffer_path = os.path.join(buffer_directory, prefix)
             print buffer_path
             safe_mkdir(buffer_path)
-            pre_time = p_loop(buffer_path, image_directory+fle)
+            pre_time = p_loop(buffer_path, os.path.join(image_directory,fle))
             t_to_add = "file %s pre-processed in %s seconds" %(file, "{0:.2f}".format(pre_time))
             afterloop_list.append((pre_time, prefix, buffer_path))
             progress_bar.value = progress_bar.value + increment
@@ -47,6 +49,7 @@ def loop_dir(image_directory, progress_bar, text_field):
     dump((image_directory, afterloop_list), open('DO_NOT_TOUCH.dmp','wb'))
     progress_bar.value = 1000
     return ''
+
 
 def loop_fle(image_directory, file, progress_bar, text_field):
     progress_bar.value = 500
@@ -68,6 +71,7 @@ def loop_fle(image_directory, file, progress_bar, text_field):
     progress_bar.value = 1000
     return ''
 
+
 def afterloop(progress_bar, text_field):
     imdir, afterloop_list = load(open('DO_NOT_TOUCH.dmp','rb'))
     output_directory = os.path.join(imdir, 'output')
@@ -75,6 +79,7 @@ def afterloop(progress_bar, text_field):
     for pre_time, fle_name, buffer_path in afterloop_list:
         t_to_add = p_afterloop(output_directory, pre_time, fle_name, buffer_path)
         text_field.text = text_field.text+t_to_add+'\n'
+
 
 if __name__ == "__main__":
     print 0

@@ -136,12 +136,24 @@ def repaint_culsters(clusterNo=100):
 def human_loop(buffer_directory, image_to_import):
     start = time()
     bw = import_image(image_to_import)
-    sum1, sum2 = gabor(bw, 1/8., 1, self_cross=True, field=20)
+
+    # Human
+    # sum1, sum2 = gabor(bw, 1/8., 1, self_cross=True, field=20)
+    #
+    # # The separator is acting here:
+    # sum10, sum20 = gabor(bw, 1/4., 0.5, field=20)
+    # sum20[sum20>-0.15] = 0
+    # sum2  = sum2 + sum20
+    ###########################################
+
+    # Mice
+    sum1, sum2= gabor(bw, 1/4., 0.5)
 
     # The separator is acting here:
-    sum10, sum20 = gabor(bw, 1/4., 0.5, field=20)
-    sum20[sum20>-0.15] = 0
+    sum10, sum20 = gabor(bw, 1/4., 0.25, 3)
+    sum20[sum20>-0.3]=0
     sum2  = sum2 + sum20
+    ############################################
 
     bw_blur = gaussian_filter(bw, 10)
     bwth = np.zeros(bw_blur.shape)
