@@ -7,8 +7,6 @@ from core_app_methods import loop_dir, loop_fle, afterloop
 from kivy.properties import ObjectProperty
 from kivy.clock import Clock
 
-# todo: schedule self_update
-# todo : define self_update method
 # Clock.schedule_interval(game.update, 1.0/60.0)
 
 from time import sleep

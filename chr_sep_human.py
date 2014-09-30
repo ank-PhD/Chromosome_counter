@@ -15,6 +15,8 @@ from skimage.measure import perimeter
 from matplotlib import colors
 from pylab import get_cmap
 # from skimage.measure import label
+# todo: add the time optimization and managemnt for varying window sizes for Gabor filter
+
 selem = disk(10)
 debug = False
 
@@ -43,7 +45,7 @@ def time_wrapper(funct):
             rs(result, funct.__name__)
         return result
 
-    return time
+    return time_execution()
 
 @debug_wrapper
 def import_image(image_to_load):
@@ -167,7 +169,6 @@ def human_loop(buffer_directory, image_to_import):
     sum20 = gabor(bw, 1/10., 1, scale_distortion=1.5, field=20)
     sum20[sum20>-0.1] = 0
     sum2  = sum2 + sum20
-    rs(sum2, 'sum2')
     ###########################################
 
     bw_blur = gaussian_filter(bw, 10)
