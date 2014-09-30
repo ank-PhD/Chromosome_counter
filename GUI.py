@@ -4,12 +4,8 @@ from kivy.uix.progressbar import ProgressBar
 from kivy.uix.textinput import TextInput
 from kivy.utils import platform
 from core_app_methods import loop_dir, loop_fle, afterloop
-from kivy.properties import ObjectProperty
 from kivy.clock import Clock
 
-# Clock.schedule_interval(game.update, 1.0/60.0)
-
-from time import sleep
 
 class MyWidget(BoxLayout):
     progress_bar = ProgressBar(max=1000)
@@ -30,18 +26,22 @@ class MyWidget(BoxLayout):
         else:    
             return []
 
+    def update(self, dt):
+        print self.progress_bar
+        print self.text_field
+
     def drive_selection_changed(self, *args):
         selected_item = args[0].selection[0].text
         self.file_chooser.path = selected_item
 
     def post_process(self, dt):
-        afterloop(self.progress_bar, self.text_field)
+        afterloop(self)
 
     def process_file(self, dt):
-        loop_fle(self.path, self.filename[0].split('\\')[-1], self.progress_bar, self.text_field)
+        loop_fle(self.path, self.filename[0].split('\\')[-1], self)
 
     def process_folder(self, dt):
-        loop_dir(self.path, self.progress_bar, self.text_field)
+        loop_dir(self.path, self)
 
     def load(self,  path, filename, Fast):
         self.path = path

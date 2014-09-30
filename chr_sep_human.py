@@ -15,10 +15,11 @@ from skimage.measure import perimeter
 from matplotlib import colors
 from pylab import get_cmap
 # from skimage.measure import label
-# todo: add the time optimization and managemnt for varying window sizes for Gabor filter
+# todo: add the time optimization and management for varying window sizes for Gabor filter
 
 selem = disk(10)
 debug = False
+timing = True
 
 def rs(matrix, name):
     plt.title(name)
@@ -33,6 +34,8 @@ def debug_wrapper(funct):
         result = funct(*args, **kwargs)
         if debug:
             rs(result, funct.__name__)
+        check_matrix.__name__ = funct.__name__
+        check_matrix.__doc__ = funct.__doc__
         return result
 
     return check_matrix
@@ -40,13 +43,16 @@ def debug_wrapper(funct):
 def time_wrapper(funct):
 
     def time_execution(*args,**kwargs):
+        start = time()
         result = funct(*args, **kwargs)
-        if debug:
-            rs(result, funct.__name__)
+        if timing:
+            print funct.__name__, time()-start
+        time_execution.__doc__ = funct.__doc__
         return result
 
-    return time_execution()
+    return time_execution
 
+@time_wrapper
 @debug_wrapper
 def import_image(image_to_load):
     col = PIL.Image.open(image_to_load)
@@ -56,6 +62,7 @@ def import_image(image_to_load):
     bw = bw.astype(np.float64)/float(np.max(bw))
     return bw
 
+@time_wrapper
 @debug_wrapper
 def import_edited(buffer_directory):
     if path.exists(buffer_directory+'-'+"EDIT_ME2.tif"):
@@ -68,6 +75,7 @@ def import_edited(buffer_directory):
     bw[bw>120] = 1
     return bw
 
+@time_wrapper
 @debug_wrapper
 def gabor(bw_image, freq, scale, scale_distortion=1., self_cross=False, field=10):
 
@@ -80,7 +88,7 @@ def gabor(bw_image, freq, scale, scale_distortion=1., self_cross=False, field=10
     quality = 16
     pi = np.pi
     orientations = np.arange(0., pi, pi/quality).tolist()
-    phis = [pi/2, pi]
+    phis = [pi]
     size = (field, field)
     sgm = (5*scale, 3*scale*scale_distortion)
 
@@ -90,11 +98,6 @@ def gabor(bw_image, freq, scale, scale_distortion=1., self_cross=False, field=10
         arr = mdp.utils.gabor(size, alpha, phi, freq, sgm)
         if self_cross:
             arr=np.minimum(arr, mdp.utils.gabor(size, alpha+pi/2, phi, freq, sgm))
-        # if double_focus:
-        #     lc_sgm = (sgm[0], sgm[1]/scale_distortion/3.*5)
-        #     arr = - arr * 2 + mdp.utils.gabor(size, alpha, phi, freq, lc_sgm)
-        #     arr[arr<0] = -arr[arr<0]/np.min(arr)
-        #     arr[arr>0] = arr[arr>0]/np.max(arr)
         arr = check_integral(arr)
         gabors[i, :, :] = arr
     #     plt.subplot(6,6,i+1)
@@ -104,27 +107,24 @@ def gabor(bw_image, freq, scale, scale_distortion=1., self_cross=False, field=10
     # plt.clf()
     node = mdp.nodes.Convolution2DNode(gabors, mode='valid', boundary='fill', fillvalue=0, output_2d=False)
     cim = node.execute(bw_image[np.newaxis, :, :])
-    sum1 = np.zeros(cim[0, 0,:,:].shape)
-    sum2 = np.zeros(cim[0, 0,:,:].shape)
+    sum2 = np.zeros(cim[0, 0, :, :].shape)
     for i in range(0, nfilters):
-        pr_cim = cim[0,i,:,:]
-        if i%2 == 0:
-            sum1 = sum1 + np.abs(pr_cim)
-        else:
-            sum2 = sum2 - pr_cim
+        pr_cim = cim[0, i, :, :]
+        sum2 = sum2 - pr_cim
     sum2[sum2>0] = sum2[sum2>0]/np.max(sum2)
     sum2[sum2<0] = -sum2[sum2<0]/np.min(sum2)
     return sum2
 
+@time_wrapper
 @debug_wrapper
 def cluster_by_diffusion(data):
     markers = np.zeros(data.shape, dtype=np.uint8)
-    markers[data < -0.1] = 1
-    markers[data > 0.2] = 2
-    labels2 = random_walker(data, markers, beta=10, mode='bf')
+    markers[data < -0.2] = 1
+    markers[data > 0.3] = 2
+    labels2 = random_walker(data, markers, beta=10, mode='cg_mg')
     return labels2
 
-
+@time_wrapper
 @debug_wrapper
 def cluster_process(labels):
     rbase = np.zeros(labels.shape)
@@ -147,6 +147,7 @@ def cluster_process(labels):
     return dilation(rbase,selem)
 
 
+@time_wrapper
 def repaint_culsters(clusterNo=100):
     prism_cmap = get_cmap('prism')
     prism_vals = prism_cmap(np.arange(clusterNo))
@@ -154,7 +155,7 @@ def repaint_culsters(clusterNo=100):
     costum_cmap = colors.LinearSegmentedColormap.from_list('my_colormap', prism_vals)
     return costum_cmap
 
-
+@time_wrapper
 def human_loop(buffer_directory, image_to_import):
     start = time()
     bw = import_image(image_to_import)
@@ -199,7 +200,7 @@ def human_loop(buffer_directory, image_to_import):
     dump(rebw ,open(buffer_directory+'-'+'DO_NOT_TOUCH_ME.dmp','wb'))
     return time()-start
 
-
+@time_wrapper
 def human_afterloop(output_directory, pre_time, fle_name, buffer_directory):
     start2 = time()
 

@@ -24,24 +24,8 @@ def count_images(path):
     return len(namelist)
 
 
-def loop_dir(image_directory, progress_bar, text_field):
-
-    def inner_loop(dt):
-
-        def update_gui(dt):
-            text_field.text = text_field.text+t_to_add+'\n'
-            progress_bar.value = progress_bar.value + increment
-
-        if suffix in ['jpeg', 'jpg', 'tif',' tiff']:
-            buffer_path = os.path.join(buffer_directory, prefix)
-            print buffer_path
-            safe_mkdir(buffer_path)
-            pre_time = p_loop(buffer_path, os.path.join(image_directory,fle))
-            t_to_add = "file %s pre-processed in %s seconds" %(file, "{0:.2f}".format(pre_time))
-            afterloop_list.append((pre_time, prefix, buffer_path))
-            Clock.schedule_once(update_gui, 0)
-
-
+def loop_dir(image_directory, widget):
+    progress_bar, text_field = widget.progress_bar, widget.text_field
     progress_bar.value = 1
     cim =  count_images(image_directory)
     if not cim:
@@ -54,14 +38,23 @@ def loop_dir(image_directory, progress_bar, text_field):
     buffer_directory = os.path.join(image_directory,'buffer')
     safe_mkdir(buffer_directory)
     for fle in os.listdir(image_directory):
+        print fle
         prefix, suffix = ('_'.join(fle.split('.')[:-1]), fle.split('.')[-1])
-        Clock.schedule_once(inner_loop, 0)
+        if suffix in ['jpeg', 'jpg', 'tif',' tiff']:
+            buffer_path = os.path.join(buffer_directory, prefix)
+            pre_time = p_loop(buffer_path, os.path.join(image_directory,fle))
+            t_to_add = "file %s pre-processed in %s seconds" %(fle, "{0:.2f}".format(pre_time))
+            afterloop_list.append((pre_time, prefix, buffer_path))
+            text_field.text = text_field.text+t_to_add+'\n'
+            progress_bar.value = progress_bar.value + increment
+            Clock.schedule_once(widget.update, 0)
     dump((image_directory, afterloop_list), open('DO_NOT_TOUCH.dmp','wb'))
-    # progress_bar.value = 1000
+    progress_bar.value = 1000
     return ''
 
 
-def loop_fle(image_directory, file, progress_bar, text_field):
+def loop_fle(image_directory, file, widget):
+    progress_bar, text_field = widget.progress_bar, widget.text_field
     progress_bar.value = 500
     afterloop_list = []
     buffer_directory = os.path.join(image_directory,'buffer')
@@ -78,11 +71,12 @@ def loop_fle(image_directory, file, progress_bar, text_field):
         t_to_add = 'file %s has a wrong extension'%file
     text_field.text = text_field.text+t_to_add+'\n'
     dump((image_directory, afterloop_list), open('DO_NOT_TOUCH.dmp', 'wb'))
-    progress_bar.value = 1000
+    # progress_bar.value = 1000
     return ''
 
 
-def afterloop(progress_bar, text_field):
+def afterloop(widget):
+    progress_bar, text_field = widget.progress_bar, widget.text_field
     imdir, afterloop_list = load(open('DO_NOT_TOUCH.dmp','rb'))
     output_directory = os.path.join(imdir, 'output')
     safe_mkdir(output_directory)
