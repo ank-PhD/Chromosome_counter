@@ -119,8 +119,8 @@ def gabor(bw_image, freq, scale, scale_distortion=1., self_cross=False, field=10
 @debug_wrapper
 def cluster_by_diffusion(data):
     markers = np.zeros(data.shape, dtype=np.uint8)
-    markers[data < -0.2] = 1
-    markers[data > 0.3] = 2
+    markers[data < -0.15] = 1
+    markers[data > 0.15] = 2
     labels2 = random_walker(data, markers, beta=10, mode='cg_mg')
     return labels2
 
@@ -163,13 +163,13 @@ def human_loop(buffer_directory, image_to_import):
     sum2 = gabor(bw, 1/8., 1, self_cross=True, field=20)
 
     # The separator is acting here:
-    sum20 = gabor(bw, 1/4., 0.5, field=20)
+    sum20 = gabor(bw, 1/4., 0.5, scale_distortion=1.5, field=20)
     sum20[sum20>-0.1] = 0
-    sum2  = sum2 + sum20
+    sum2 = sum2 + sum20
     # Mice part
-    sum20 = gabor(bw, 1/10., 1, scale_distortion=1.5, field=20)
-    sum20[sum20>-0.1] = 0
-    sum2  = sum2 + sum20
+    # sum20 = gabor(bw, 1/10., 1, scale_distortion=1.5, field=20)
+    # sum20[sum20>-0.15] = 0
+    # sum2 = sum2 + sum20
     ###########################################
 
     bw_blur = gaussian_filter(bw, 10)
