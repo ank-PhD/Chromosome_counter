@@ -18,8 +18,8 @@ from pylab import get_cmap
 # todo: add the time optimization and management for varying window sizes for Gabor filter
 
 selem = disk(10)
-debug = False
-timing = True
+debug = True
+timing = False
 
 def rs(matrix, name):
     plt.title(name)
@@ -100,11 +100,13 @@ def gabor(bw_image, freq, scale, scale_distortion=1., self_cross=False, field=10
             arr=np.minimum(arr, mdp.utils.gabor(size, alpha+pi/2, phi, freq, sgm))
         arr = check_integral(arr)
         gabors[i, :, :] = arr
-    #     plt.subplot(6,6,i+1)
-    #     plt.title('%s, %s, %s, %s'%('{0:.2f}'.format(alpha), '{0:.2f}'.format(phi), freq, sgm))
-    #     plt.imshow(arr, cmap = 'gray', interpolation='nearest')
-    # plt.show()
-    # plt.clf()
+        if debug:
+            plt.subplot(6,6,i+1)
+            plt.title('%s, %s, %s, %s'%('{0:.2f}'.format(alpha), '{0:.2f}'.format(phi), freq, sgm))
+            plt.imshow(arr, cmap = 'gray', interpolation='nearest')
+    if debug:
+        plt.show()
+        plt.clf()
     node = mdp.nodes.Convolution2DNode(gabors, mode='valid', boundary='fill', fillvalue=0, output_2d=False)
     cim = node.execute(bw_image[np.newaxis, :, :])
     sum2 = np.zeros(cim[0, 0, :, :].shape)
@@ -163,9 +165,11 @@ def human_loop(buffer_directory, image_to_import):
     sum2 = gabor(bw, 1/8., 1, self_cross=True, field=20)
 
     # The separator is acting here:
-    sum20 = gabor(bw, 1/4., 0.5, scale_distortion=1.5, field=20)
+    sum20 = gabor(bw, 1/6., 0.75, scale_distortion=1.5, field=20)
     sum20[sum20>-0.1] = 0
     sum2 = sum2 + sum20
+    if debug:
+        rs(sum2, 'sum2-definitive')
     # Mice part
     # sum20 = gabor(bw, 1/10., 1, scale_distortion=1.5, field=20)
     # sum20[sum20>-0.15] = 0
