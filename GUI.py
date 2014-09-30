@@ -5,8 +5,12 @@ from kivy.uix.textinput import TextInput
 from kivy.utils import platform
 from core_app_methods import loop_dir, loop_fle, afterloop
 from kivy.properties import ObjectProperty
+from kivy.clock import Clock
 
-import os
+# todo: schedule self_update
+# todo : define self_update method
+# Clock.schedule_interval(game.update, 1.0/60.0)
+
 from time import sleep
 
 class MyWidget(BoxLayout):
@@ -32,26 +36,31 @@ class MyWidget(BoxLayout):
         selected_item = args[0].selection[0].text
         self.file_chooser.path = selected_item
 
+    def post_process(self, dt):
+        afterloop(self.progress_bar, self.text_field)
+
+    def process_file(self, dt):
+        loop_fle(self.path, self.filename[0].split('\\')[-1], self.progress_bar, self.text_field)
+
+    def process_folder(self, dt):
+        loop_dir(self.path, self.progress_bar, self.text_field)
+
     def load(self,  path, filename, Fast):
+        self.path = path
+        self.filename = filename
         if Fast:
-            afterloop(self.progress_bar, self.text_field)
             t_to_add = 'will try to post-process files pre-processed since the previous >>>'
             self.text_field.text = self.text_field.text+t_to_add+'\n'
-            self.text_field._update_graphics()
-            sleep(0.5)
+            Clock.schedule_once(self.post_process, 0)
         else:
             if filename:
                 t_to_add = '>>> will try to pre-process file %s at %s'%(filename[0].split('\\')[-1], path)
                 self.text_field.text = self.text_field.text+t_to_add+'\n'
-                self.text_field._update_graphics()
-                sleep(0.5)
-                loop_fle(path, filename[0].split('\\')[-1], self.progress_bar, self.text_field)
+                Clock.schedule_once(self.process_file, 0)
             else:
                 t_to_add = '>>> will try to pre-process all images at %s'%path
                 self.text_field.text = self.text_field.text+t_to_add+'\n'
-                self.text_field._update_graphics()
-                sleep(0.5)
-                loop_dir(path, self.progress_bar, self.text_field)
+                Clock.schedule_once(self.process_folder, 0)
 
 
 class Loader(App):

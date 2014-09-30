@@ -9,13 +9,13 @@ from pickle import load, dump
 from os import path
 from time import time
 from skimage.segmentation import random_walker, mark_boundaries
-from skimage.morphology import convex_hull_image, label
+from skimage.morphology import convex_hull_image, label, dilation, disk
 from skimage.filter import gaussian_filter
 from skimage.measure import perimeter
 from matplotlib import colors
 from pylab import get_cmap
 # from skimage.measure import label
-
+selem = disk(10)
 debug = False
 
 def rs(matrix, name):
@@ -35,6 +35,16 @@ def debug_wrapper(funct):
 
     return check_matrix
 
+def time_wrapper(funct):
+
+    def time_execution(*args,**kwargs):
+        result = funct(*args, **kwargs)
+        if debug:
+            rs(result, funct.__name__)
+        return result
+
+    return time
+
 @debug_wrapper
 def import_image(image_to_load):
     col = PIL.Image.open(image_to_load)
@@ -46,16 +56,17 @@ def import_image(image_to_load):
 
 @debug_wrapper
 def import_edited(buffer_directory):
-    if path.exists(path.join(buffer_directory,"EDIT_ME2.tif")):
-        col = PIL.Image.open(path.join(buffer_directory,"EDIT_ME2.tif"))
+    if path.exists(buffer_directory+'-'+"EDIT_ME2.tif"):
+        col = PIL.Image.open(buffer_directory+'-'+"EDIT_ME2.tif")
     else:
-        col = PIL.Image.open(path.join(buffer_directory,"EDIT_ME.tif"))
+        col = PIL.Image.open(buffer_directory+'-'+"EDIT_ME.tif")
     gray = col.convert('L')
     bw = np.asarray(gray).copy()
     bw[bw<=120] = 0
     bw[bw>120] = 1
     return bw
 
+@debug_wrapper
 def gabor(bw_image, freq, scale, scale_distortion=1., self_cross=False, field=10):
 
     # gabor filter normalization with respect to the surface convolution
@@ -76,9 +87,19 @@ def gabor(bw_image, freq, scale, scale_distortion=1., self_cross=False, field=10
     for i, (alpha, phi) in enumerate(product(orientations, phis)):
         arr = mdp.utils.gabor(size, alpha, phi, freq, sgm)
         if self_cross:
-            arr=np.minimum(arr,mdp.utils.gabor(size, alpha+pi/2, phi, freq, sgm))
+            arr=np.minimum(arr, mdp.utils.gabor(size, alpha+pi/2, phi, freq, sgm))
+        # if double_focus:
+        #     lc_sgm = (sgm[0], sgm[1]/scale_distortion/3.*5)
+        #     arr = - arr * 2 + mdp.utils.gabor(size, alpha, phi, freq, lc_sgm)
+        #     arr[arr<0] = -arr[arr<0]/np.min(arr)
+        #     arr[arr>0] = arr[arr>0]/np.max(arr)
         arr = check_integral(arr)
-        gabors[i,:,:] = arr
+        gabors[i, :, :] = arr
+    #     plt.subplot(6,6,i+1)
+    #     plt.title('%s, %s, %s, %s'%('{0:.2f}'.format(alpha), '{0:.2f}'.format(phi), freq, sgm))
+    #     plt.imshow(arr, cmap = 'gray', interpolation='nearest')
+    # plt.show()
+    # plt.clf()
     node = mdp.nodes.Convolution2DNode(gabors, mode='valid', boundary='fill', fillvalue=0, output_2d=False)
     cim = node.execute(bw_image[np.newaxis, :, :])
     sum1 = np.zeros(cim[0, 0,:,:].shape)
@@ -89,16 +110,15 @@ def gabor(bw_image, freq, scale, scale_distortion=1., self_cross=False, field=10
             sum1 = sum1 + np.abs(pr_cim)
         else:
             sum2 = sum2 - pr_cim
-
     sum2[sum2>0] = sum2[sum2>0]/np.max(sum2)
     sum2[sum2<0] = -sum2[sum2<0]/np.min(sum2)
-    return sum1/np.max(sum1), sum2
+    return sum2
 
 @debug_wrapper
 def cluster_by_diffusion(data):
     markers = np.zeros(data.shape, dtype=np.uint8)
-    markers[data < -0.15] = 1
-    markers[data > 0.15] = 2
+    markers[data < -0.1] = 1
+    markers[data > 0.2] = 2
     labels2 = random_walker(data, markers, beta=10, mode='bf')
     return labels2
 
@@ -122,7 +142,7 @@ def cluster_process(labels):
             if cond:
                 rbase = rbase + base
     rbase[rubase.astype(np.bool)] = 1
-    return rbase
+    return dilation(rbase,selem)
 
 
 def repaint_culsters(clusterNo=100):
@@ -136,24 +156,19 @@ def repaint_culsters(clusterNo=100):
 def human_loop(buffer_directory, image_to_import):
     start = time()
     bw = import_image(image_to_import)
-
     # Human
-    # sum1, sum2 = gabor(bw, 1/8., 1, self_cross=True, field=20)
-    #
-    # # The separator is acting here:
-    # sum10, sum20 = gabor(bw, 1/4., 0.5, field=20)
-    # sum20[sum20>-0.15] = 0
-    # sum2  = sum2 + sum20
-    ###########################################
-
-    # Mice
-    sum1, sum2= gabor(bw, 1/4., 0.5)
+    sum2 = gabor(bw, 1/8., 1, self_cross=True, field=20)
 
     # The separator is acting here:
-    sum10, sum20 = gabor(bw, 1/4., 0.25, 3)
-    sum20[sum20>-0.3]=0
+    sum20 = gabor(bw, 1/4., 0.5, field=20)
+    sum20[sum20>-0.1] = 0
     sum2  = sum2 + sum20
-    ############################################
+    # Mice part
+    sum20 = gabor(bw, 1/10., 1, scale_distortion=1.5, field=20)
+    sum20[sum20>-0.1] = 0
+    sum2  = sum2 + sum20
+    rs(sum2, 'sum2')
+    ###########################################
 
     bw_blur = gaussian_filter(bw, 10)
     bwth = np.zeros(bw_blur.shape)
@@ -163,14 +178,14 @@ def human_loop(buffer_directory, image_to_import):
     rbase = cluster_process(clsts)[9:,:][:,9:][:-10,:][:,:-10]
 
     rim = PIL.Image.fromarray((rbase*254).astype(np.uint8))
-    rim.save(path.join(buffer_directory,"I_AM_UNBROKEN_NUCLEUS.bmp"))
+    rim.save(buffer_directory+'-'+"I_AM_UNBROKEN_NUCLEUS.bmp")
 
     sum22 = np.copy(sum2)
     sum22[sum2<0] = 0
     d_c = cluster_by_diffusion(sum2)
     rebw = bw[9:,:][:,9:][:-10,:][:,:-10]
     reim = PIL.Image.fromarray((rebw/np.max(rebw)*254).astype(np.uint8))
-    reim.save(path.join(buffer_directory,"I_AM_THE_ORIGINAL.tif"))
+    reim.save(buffer_directory+'-'+"I_AM_THE_ORIGINAL.tif")
     seg_dc = (label(d_c, neighbors=4)+1)*(d_c-1)
     redd = set(seg_dc[rbase>0.01].tolist())
     for i in redd:
@@ -179,8 +194,8 @@ def human_loop(buffer_directory, image_to_import):
     d_c[seg_dc>0] = 1
     int_arr = np.asarray(np.dstack((d_c*254, d_c*254, d_c*0)), dtype=np.uint8)
     msk = PIL.Image.fromarray(int_arr)
-    msk.save(path.join(buffer_directory,"EDIT_ME.tif"))
-    dump(rebw ,open(path.join(buffer_directory,'DO_NOT_TOUCH_ME.dmp'),'wb'))
+    msk.save(buffer_directory+'-'+"EDIT_ME.tif")
+    dump(rebw ,open(buffer_directory+'-'+'DO_NOT_TOUCH_ME.dmp','wb'))
     return time()-start
 
 
@@ -188,7 +203,7 @@ def human_afterloop(output_directory, pre_time, fle_name, buffer_directory):
     start2 = time()
 
     d_c = import_edited(buffer_directory)
-    rebw = load(open(path.join(buffer_directory,'DO_NOT_TOUCH_ME.dmp'),'rb'))
+    rebw = load(open(buffer_directory+'-'+'DO_NOT_TOUCH_ME.dmp','rb'))
     seg_dc = (label(d_c,neighbors=4)+1)*d_c
     if np.max(seg_dc)<4:
         return 'FAILED: mask for %s looks unsegmented' % fle_name

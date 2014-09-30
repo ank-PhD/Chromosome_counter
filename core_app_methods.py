@@ -4,6 +4,7 @@ from chr_sep_human import human_loop as p_loop
 from chr_sep_human import human_afterloop as p_afterloop
 import os, errno
 from pickle import load, dump
+from kivy.clock import Clock
 
 
 def safe_mkdir(path):
@@ -24,6 +25,23 @@ def count_images(path):
 
 
 def loop_dir(image_directory, progress_bar, text_field):
+
+    def inner_loop(dt):
+
+        def update_gui(dt):
+            text_field.text = text_field.text+t_to_add+'\n'
+            progress_bar.value = progress_bar.value + increment
+
+        if suffix in ['jpeg', 'jpg', 'tif',' tiff']:
+            buffer_path = os.path.join(buffer_directory, prefix)
+            print buffer_path
+            safe_mkdir(buffer_path)
+            pre_time = p_loop(buffer_path, os.path.join(image_directory,fle))
+            t_to_add = "file %s pre-processed in %s seconds" %(file, "{0:.2f}".format(pre_time))
+            afterloop_list.append((pre_time, prefix, buffer_path))
+            Clock.schedule_once(update_gui, 0)
+
+
     progress_bar.value = 1
     cim =  count_images(image_directory)
     if not cim:
@@ -37,17 +55,9 @@ def loop_dir(image_directory, progress_bar, text_field):
     safe_mkdir(buffer_directory)
     for fle in os.listdir(image_directory):
         prefix, suffix = ('_'.join(fle.split('.')[:-1]), fle.split('.')[-1])
-        if suffix in ['jpeg', 'jpg', 'tif',' tiff']:
-            buffer_path = os.path.join(buffer_directory, prefix)
-            print buffer_path
-            safe_mkdir(buffer_path)
-            pre_time = p_loop(buffer_path, os.path.join(image_directory,fle))
-            t_to_add = "file %s pre-processed in %s seconds" %(file, "{0:.2f}".format(pre_time))
-            afterloop_list.append((pre_time, prefix, buffer_path))
-            progress_bar.value = progress_bar.value + increment
-            text_field.text = text_field.text+t_to_add+'\n'
+        Clock.schedule_once(inner_loop, 0)
     dump((image_directory, afterloop_list), open('DO_NOT_TOUCH.dmp','wb'))
-    progress_bar.value = 1000
+    # progress_bar.value = 1000
     return ''
 
 
