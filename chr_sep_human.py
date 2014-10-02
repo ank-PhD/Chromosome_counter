@@ -18,9 +18,12 @@ from pylab import get_cmap
 # todo and management for varying window sizes for Gabor filters
 # todo: darkest spot => in testing
 
+# todo: threshold-filtering instead of diffusion clustering
+# todo:
+
 selem = disk(10)
-debug = True
-timing = True
+debug = False
+timing = False
 
 def rs(matrix, name):
     plt.title(name)
@@ -264,7 +267,7 @@ def human_afterloop(output_directory, pre_time, fle_name, buffer_directory):
 
     # shows the result before saving the clustering and printing to the user the number of the images
     plt.subplot(1,2,1)
-    plt.title('Original image')
+    plt.title(fle_name)
     plt.imshow(rebw, cmap='gray', interpolation='nearest')
 
     plt.subplot(1,2,2)
