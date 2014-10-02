@@ -18,11 +18,14 @@
         BoxLayout:
             orientation: 'vertical'
             Button:
-                text: "Preprocess"
-                on_release: root.load(file_chooser.path, file_chooser.selection, False)
+                text: "Preprocess - Human"
+                on_release: root.load(file_chooser.path, file_chooser.selection, False, 0)
+            Button:
+                text: "Preprocess - Mice"
+                on_release: root.load(file_chooser.path, file_chooser.selection, False, 1)
             Button:
                 text: "Process after correction"
-                on_release: root.load(file_chooser.path, file_chooser.selection, True)
+                on_release: root.load(file_chooser.path, file_chooser.selection, True, -1)
     BoxLayout:
         orientation: 'vertical'
         ProgressBar:

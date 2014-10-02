@@ -5,6 +5,7 @@ from chr_sep_human import human_afterloop as p_afterloop
 import os, errno
 from pickle import load, dump
 from kivy.clock import Clock
+from mock import MagicMock, Mock
 
 
 def safe_mkdir(path):
@@ -42,7 +43,7 @@ def loop_dir(image_directory, widget):
         prefix, suffix = ('_'.join(fle.split('.')[:-1]), fle.split('.')[-1])
         if suffix in ['jpeg', 'jpg', 'tif',' tiff']:
             buffer_path = os.path.join(buffer_directory, prefix)
-            pre_time = p_loop(buffer_path, os.path.join(image_directory,fle))
+            pre_time = p_loop(buffer_path, os.path.join(image_directory,fle), widget.stack_type)
             t_to_add = "file %s pre-processed in %s seconds" %(fle, "{0:.2f}".format(pre_time))
             afterloop_list.append((pre_time, prefix, buffer_path))
             text_field.text = text_field.text+t_to_add+'\n'
@@ -64,7 +65,7 @@ def loop_fle(image_directory, file, widget):
         buffer_path = os.path.join(buffer_directory, prefix)
         print buffer_path
         safe_mkdir(buffer_path)
-        pre_time = p_loop(buffer_path, os.path.join(image_directory, file))
+        pre_time = p_loop(buffer_path, os.path.join(image_directory, file), widget.stack_type)
         t_to_add = "file %s pre-processed in %s seconds" %(file, "{0:.2f}".format(pre_time))
         afterloop_list.append((pre_time, prefix, buffer_path))
     else:
@@ -85,6 +86,24 @@ def afterloop(widget):
         text_field.text = text_field.text+t_to_add+'\n'
 
 
+class progbar(object):
+    def __init__(self):
+        self.value = 0
+
+class text_fields(object):
+    def __init__(self):
+        self.text = ''
+
+class wdg(object):
+    def __init__(self, st_tp):
+        self.progress_bar = progbar()
+        self.text_field = text_fields()
+        self.stack_type = st_tp
+
 if __name__ == "__main__":
-    print 0
+    fname = 'img_000000001__000.tif'
+    test_f = 'L:/Yuping/Sam/clone isolation/4.5/4.5_22 PARENT/4.5_22'
+    st_tp = 1
+    loop_fle(test_f, fname, wdg(st_tp))
+    afterloop(wdg(st_tp))
     pass

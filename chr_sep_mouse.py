@@ -8,8 +8,6 @@ import mdp
 from itertools import product
 from skimage.segmentation import random_walker, mark_boundaries
 
-
-# TODO: try inducing a finer separator set
 # TODO: try using the data for the edge detection by assigning a null label to all the edge detectors, so that the data is recovered by diffusion from a skeleton
 
 

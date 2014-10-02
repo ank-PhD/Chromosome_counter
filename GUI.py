@@ -27,8 +27,7 @@ class MyWidget(BoxLayout):
             return []
 
     def update(self, dt):
-        print self.progress_bar
-        print self.text_field
+        print 'undating, or should be'
 
     def drive_selection_changed(self, *args):
         selected_item = args[0].selection[0].text
@@ -43,21 +42,22 @@ class MyWidget(BoxLayout):
     def process_folder(self, dt):
         loop_dir(self.path, self)
 
-    def load(self,  path, filename, Fast):
+    def load(self,  path, filename, Fast, stack_type):
         self.path = path
         self.filename = filename
+        self.stack_type = stack_type
         if Fast:
             t_to_add = 'will try to post-process files pre-processed since the previous >>>'
-            self.text_field.text = self.text_field.text+t_to_add+'\n'
+            self.text_field.text = self.text_field.text + t_to_add + '\n'
             Clock.schedule_once(self.post_process, 0)
         else:
             if filename:
                 t_to_add = '>>> will try to pre-process file %s at %s'%(filename[0].split('\\')[-1], path)
-                self.text_field.text = self.text_field.text+t_to_add+'\n'
+                self.text_field.text = self.text_field.text + t_to_add + '\n'
                 Clock.schedule_once(self.process_file, 0)
             else:
                 t_to_add = '>>> will try to pre-process all images at %s'%path
-                self.text_field.text = self.text_field.text+t_to_add+'\n'
+                self.text_field.text = self.text_field.text + t_to_add + '\n'
                 Clock.schedule_once(self.process_folder, 0)
 
 

@@ -15,11 +15,12 @@ from skimage.measure import perimeter
 from matplotlib import colors
 from pylab import get_cmap
 # from skimage.measure import label
-# todo: add the time optimization and management for varying window sizes for Gabor filter
+# todo and management for varying window sizes for Gabor filters
+# todo: darkest spot => in testing
 
 selem = disk(10)
 debug = True
-timing = False
+timing = True
 
 def rs(matrix, name):
     plt.title(name)
@@ -33,7 +34,10 @@ def debug_wrapper(funct):
     def check_matrix(*args,**kwargs):
         result = funct(*args, **kwargs)
         if debug:
-            rs(result, funct.__name__)
+            if type(result) is not tuple:
+                rs(result, funct.__name__)
+            else:
+                rs(result[0], funct.__name__)
         check_matrix.__name__ = funct.__name__
         check_matrix.__doc__ = funct.__doc__
         return result
@@ -52,15 +56,16 @@ def time_wrapper(funct):
 
     return time_execution
 
+
 @time_wrapper
 @debug_wrapper
 def import_image(image_to_load):
-    col = PIL.Image.open(image_to_load)
-    gray = col.convert('L')
-    bw = np.asarray(gray).copy()
+    gray = PIL.Image.open(image_to_load).convert('L')
+    bw = np.asarray(gray)
     bw = bw - np.min(bw)
     bw = bw.astype(np.float64)/float(np.max(bw))
     return bw
+
 
 @time_wrapper
 @debug_wrapper
@@ -74,6 +79,7 @@ def import_edited(buffer_directory):
     bw[bw<=120] = 0
     bw[bw>120] = 1
     return bw
+
 
 @time_wrapper
 @debug_wrapper
@@ -97,11 +103,14 @@ def gabor(bw_image, freq, scale, scale_distortion=1., self_cross=False, field=10
     for i, (alpha, phi) in enumerate(product(orientations, phis)):
         arr = mdp.utils.gabor(size, alpha, phi, freq, sgm)
         if self_cross:
-            arr=np.minimum(arr, mdp.utils.gabor(size, alpha+pi/2, phi, freq, sgm))
+            if self_cross == 1:
+                arr = np.minimum(arr, mdp.utils.gabor(size, alpha+pi/2, phi, freq, sgm))
+            if self_cross == 2:
+                arr -= mdp.utils.gabor(size, alpha+pi/2, phi, freq, sgm)
         arr = check_integral(arr)
         gabors[i, :, :] = arr
         if debug:
-            plt.subplot(6,6,i+1)
+            plt.subplot(6, 6, i+1)
             plt.title('%s, %s, %s, %s'%('{0:.2f}'.format(alpha), '{0:.2f}'.format(phi), freq, sgm))
             plt.imshow(arr, cmap = 'gray', interpolation='nearest')
     if debug:
@@ -110,12 +119,16 @@ def gabor(bw_image, freq, scale, scale_distortion=1., self_cross=False, field=10
     node = mdp.nodes.Convolution2DNode(gabors, mode='valid', boundary='fill', fillvalue=0, output_2d=False)
     cim = node.execute(bw_image[np.newaxis, :, :])
     sum2 = np.zeros(cim[0, 0, :, :].shape)
-    for i in range(0, nfilters):
-        pr_cim = cim[0, i, :, :]
-        sum2 = sum2 - pr_cim
-    sum2[sum2>0] = sum2[sum2>0]/np.max(sum2)
-    sum2[sum2<0] = -sum2[sum2<0]/np.min(sum2)
-    return sum2
+    # st2 = np.zeros(cim[0, :, :, :].shape)
+    # for i in xrange(0, nfilters):
+    #     pr_cim = -cim[0, i, :, :]
+    #     sum2 += pr_cim
+    sum2 = - np.sum(cim[0, :, :, :], axis=0)
+    st2 = cim[0, :, :, :]
+    sum2[sum2>0] /= np.max(sum2)
+    sum2[sum2<0] /= -np.min(sum2)
+    return sum2, st2
+
 
 @time_wrapper
 @debug_wrapper
@@ -126,9 +139,10 @@ def cluster_by_diffusion(data):
     labels2 = random_walker(data, markers, beta=10, mode='cg_mg')
     return labels2
 
+
 @time_wrapper
 @debug_wrapper
-def cluster_process(labels):
+def cluster_process(labels, original):
     rbase = np.zeros(labels.shape)
     rubase = np.zeros(labels.shape)
     rubase[range(0,20),:] = 1
@@ -143,10 +157,13 @@ def cluster_process(labels):
             hull = convex_hull_image(base)
             lh =len(hull.nonzero()[0])
             cond = (li>4000 and float(lh)/float(li)<1.07 and perimeter(base)**2.0/li<20) or np.max(base*rubase)>0.5
+            print li>4000 and float(lh)/float(li)<1.07, perimeter(base)**2.0/li<20, np.max(base*rubase)>0.5, np.min(original[base>0])
+            if debug:
+                rs(base,'subspread cluster')
             if cond:
                 rbase = rbase + base
     rbase[rubase.astype(np.bool)] = 1
-    return dilation(rbase,selem)
+    return dilation(rbase, selem)
 
 
 @time_wrapper
@@ -157,31 +174,55 @@ def repaint_culsters(clusterNo=100):
     costum_cmap = colors.LinearSegmentedColormap.from_list('my_colormap', prism_vals)
     return costum_cmap
 
-@time_wrapper
-def human_loop(buffer_directory, image_to_import):
-    start = time()
-    bw = import_image(image_to_import)
-    # Human
-    sum2 = gabor(bw, 1/8., 1, self_cross=True, field=20)
 
-    # The separator is acting here:
-    sum20 = gabor(bw, 1/6., 0.75, scale_distortion=1.5, field=20)
-    sum20[sum20>-0.1] = 0
-    sum2 = sum2 + sum20
+@time_wrapper
+@debug_wrapper
+def compare_orthogonal_selectors(voluminal_crossed_matrix):
+    var2 = np.max(voluminal_crossed_matrix - np.roll(voluminal_crossed_matrix, voluminal_crossed_matrix.shape[0]/2, 0), axis=0)
+    var2 /= np.max(var2)
+    return var2
+
+
+@time_wrapper
+def human_loop(buffer_directory, image_to_import, stack_type):
+    start = time()
+    if stack_type == 0:
+        # Human
+        bw = import_image(image_to_import)
+        sum2,_ = gabor(bw, 1/8., 1, self_cross=1, field=20)
+
+        sum20,_ = gabor(bw, 1/6., 0.75, scale_distortion=1.5, field=20)
+        sum20[sum20>-0.1] = 0
+        sum2 = sum2 + sum20
+
+    elif stack_type == 1:
+        # Mice
+        bw = import_image(image_to_import)
+        sum2,_ = gabor(bw, 1/8., 1, field=20)
+
+        sum20,_ = gabor(bw, 1/4., 0.5, field=20)
+        sum20[sum20>-0.1] = 0
+        sum2 = sum2 + sum20
+
+        # crossed antisense selctor
+        _, st = gabor(bw, 1/8., 1, self_cross=2, field=20)
+        sum20 = compare_orthogonal_selectors(st)
+        sum20[sum20<0.65] = 0
+        if debug:
+            rs(sum20, 'selected cross')
+        sum2 = sum2 - sum20
+    else:
+        raise Exception('Unrecognized chromosome type')
+
     if debug:
-        rs(sum2, 'sum2-definitive')
-    # Mice part
-    # sum20 = gabor(bw, 1/10., 1, scale_distortion=1.5, field=20)
-    # sum20[sum20>-0.15] = 0
-    # sum2 = sum2 + sum20
-    ###########################################
+            rs(sum2, 'sum2-definitive')
 
     bw_blur = gaussian_filter(bw, 10)
     bwth = np.zeros(bw_blur.shape)
-    bwth[bw_blur>0.3] = 1
+    bwth[bw_blur>0.15] = 1
     clsts = (label(bwth)+1)*bwth
 
-    rbase = cluster_process(clsts)[9:,:][:,9:][:-10,:][:,:-10]
+    rbase = cluster_process(clsts, bw)[9:,:][:,9:][:-10,:][:,:-10]
 
     rim = PIL.Image.fromarray((rbase*254).astype(np.uint8))
     rim.save(buffer_directory+'-'+"I_AM_UNBROKEN_NUCLEUS.bmp")
@@ -199,10 +240,13 @@ def human_loop(buffer_directory, image_to_import):
     d_c = d_c*0
     d_c[seg_dc>0] = 1
     int_arr = np.asarray(np.dstack((d_c*254, d_c*254, d_c*0)), dtype=np.uint8)
+    if debug:
+            rs(int_arr, 'segmentation mask')
     msk = PIL.Image.fromarray(int_arr)
     msk.save(buffer_directory+'-'+"EDIT_ME.tif")
     dump(rebw ,open(buffer_directory+'-'+'DO_NOT_TOUCH_ME.dmp','wb'))
     return time()-start
+
 
 @time_wrapper
 def human_afterloop(output_directory, pre_time, fle_name, buffer_directory):
