@@ -30,7 +30,8 @@ def rs(matrix, name):
     plt.title(name)
     plt.imshow(matrix, interpolation='nearest')
     plt.colorbar()
-    plt.show()
+    if debug:
+        plt.show()
     plt.clf()
 
 def debug_wrapper(funct):
@@ -203,7 +204,7 @@ def human_loop(buffer_directory, image_to_import, stack_type):
     lbw = np.log(bw+0.001)
     lbw = lbw - np.min(lbw)
     lbw = lbw/np.max(lbw)
-    rs(lbw, 'log-bw')
+    # rs(lbw, 'log-bw')
     sum1, _ = gabor(lbw, 1/32., 2, scale_distortion=2., field=40,  phi=np.pi/2, abes=True)
 
     if stack_type == 0:
@@ -243,13 +244,13 @@ def human_loop(buffer_directory, image_to_import, stack_type):
     #     plt.hist(bw_blur)
     #     plt.show()
 
-    bwth[bw_blur > np.percentile(bw_blur, 80)] = 1 <"we need somehow to adjust this in a non-parametric way."
+    bwth[bw_blur > np.percentile(bw_blur, 80)] = 1 #<"we need somehow to adjust this in a non-parametric way."
     # plt.hist(bw_blur)
     # plt.show()
     bwth[sum1 > 0.45] = 0
     clsts = (label(bwth)+1)*bwth
 
-    rs(clsts, 'cluster_labels')
+    # rs(clsts, 'cluster_labels')
 
     rbase = cluster_process(clsts, bw, sum2)
 
