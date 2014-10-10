@@ -56,6 +56,7 @@ def loop_dir(image_directory, widget):
 
 def loop_fle(image_directory, file, widget):
     progress_bar, text_field = widget.progress_bar, widget.text_field
+    widget.append_to_consommables('starting process\n')
     progress_bar.value = 500
     afterloop_list = []
     buffer_directory = os.path.join(image_directory,'buffer')
@@ -67,6 +68,7 @@ def loop_fle(image_directory, file, widget):
         safe_mkdir(buffer_path)
         pre_time = p_loop(buffer_path, os.path.join(image_directory, file), widget.stack_type)
         t_to_add = "file %s pre-processed in %s seconds" %(file, "{0:.2f}".format(pre_time))
+        widget.append_to_consommables('t_to_add')
         afterloop_list.append((pre_time, prefix, buffer_path))
     else:
         t_to_add = 'file %s has a wrong extension'%file

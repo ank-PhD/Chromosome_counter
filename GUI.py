@@ -4,8 +4,14 @@ from kivy.uix.progressbar import ProgressBar
 from kivy.uix.textinput import TextInput
 from kivy.utils import platform
 from core_app_methods import loop_dir, loop_fle, afterloop
-from kivy.clock import Clock
+from kivy.clock import Clock, _default_time as time, mainthread
+from kivy.factory import Factory
+from kivy.properties import ListProperty
 
+from threading import Thread
+from time import sleep
+
+MAX_TIME = 1/60.
 
 class MyWidget(BoxLayout):
     progress_bar = ProgressBar(max=1000)
@@ -26,8 +32,12 @@ class MyWidget(BoxLayout):
         else:    
             return []
 
+    @mainthread
+    def append_to_consommables(self, message):
+        App.get_running_app().consommables.append(message)
+
     def update(self, dt):
-        print 'undating, or should be'
+        print 'updating, or should be'
 
     def drive_selection_changed(self, *args):
         selected_item = args[0].selection[0].text
@@ -38,9 +48,11 @@ class MyWidget(BoxLayout):
 
     def process_file(self, dt):
         loop_fle(self.path, self.filename[0].split('\\')[-1], self)
+        App.get_running_app().consommables.append("loop done - for real \n")
 
     def process_folder(self, dt):
         loop_dir(self.path, self)
+        App.get_running_app().consommables.append("loop done - for real \n")
 
     def load(self,  path, filename, Fast, stack_type):
         self.path = path
@@ -62,8 +74,16 @@ class MyWidget(BoxLayout):
 
 
 class Loader(App):
+    consommables = ListProperty([])
+
     def build(self):
+        Clock.schedule_interval(self.consume, 0)
         return MyWidget()
+
+    def consume(self, *args):
+        while self.consommables and time() < (Clock.get_time() + MAX_TIME):
+            item = self.consommables.pop(0)
+            self.root.ids.text_field.text += item
 
 if __name__ == '__main__':
     Loader().run()

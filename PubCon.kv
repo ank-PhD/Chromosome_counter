@@ -1,0 +1,19 @@
+#:kivy 1.8.0
+
+#:import lv kivy.uix.listview
+#:import la kivy.adapters.listadapter
+
+BoxLayout:
+    ScrollView:
+        GridLayout:
+            cols: 1
+            id: target
+            size_hint: 1, None
+            height: self.minimum_height
+
+    MyButton:
+        text: 'run'
+
+<MyLabel@Label>:
+    size_hint_y: None
+    height: self.texture_size[1]
