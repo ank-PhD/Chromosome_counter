@@ -101,9 +101,9 @@ class wdg(object):
         self.stack_type = st_tp
 
 if __name__ == "__main__":
-    fname = 'img_000000001__000.tif'
-    test_f = 'L:/Yuping/Sam/clone isolation/4.5/4.5_22 PARENT/4.5_22'
-    st_tp = 1
+    fname = 'img_000000002__000.tif'
+    test_f = 'L:/Akn/mammalian/human chromosome spreads/10-7-14 rpe/rpe WT/rpe WT images 2'
+    st_tp = 0
     loop_fle(test_f, fname, wdg(st_tp))
     afterloop(wdg(st_tp))
     pass
