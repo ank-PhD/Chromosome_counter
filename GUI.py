@@ -7,9 +7,12 @@ from core_app_methods import loop_dir, loop_fle, afterloop
 from kivy.clock import Clock, _default_time as time, mainthread
 from kivy.factory import Factory
 from kivy.properties import ListProperty
-
 from threading import Thread
-from time import sleep
+
+
+# todo: add an animated widget and message to indicate the process is running and is not hung up
+# example: https://github.com/kivy/kivy/wiki/Working-with-Python-threads-inside-a-Kivy-application
+
 
 MAX_TIME = 1/60.
 
