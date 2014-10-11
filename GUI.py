@@ -46,13 +46,11 @@ class MyWidget(BoxLayout):
     def post_process(self, dt):
         afterloop(self)
 
-    def process_file(self, dt):
+    def process_file(self):
         loop_fle(self.path, self.filename[0].split('\\')[-1], self)
-        App.get_running_app().consommables.append("loop done - for real \n")
 
-    def process_folder(self, dt):
+    def process_folder(self):
         loop_dir(self.path, self)
-        App.get_running_app().consommables.append("loop done - for real \n")
 
     def load(self,  path, filename, Fast, stack_type):
         self.path = path
@@ -66,11 +64,11 @@ class MyWidget(BoxLayout):
             if filename:
                 t_to_add = '>>> will try to pre-process file %s at %s'%(filename[0].split('\\')[-1], path)
                 self.text_field.text = self.text_field.text + t_to_add + '\n'
-                Clock.schedule_once(self.process_file, 0)
+                Thread(target=self.process_file).start()
             else:
                 t_to_add = '>>> will try to pre-process all images at %s'%path
                 self.text_field.text = self.text_field.text + t_to_add + '\n'
-                Clock.schedule_once(self.process_folder, 0)
+                Thread(target=self.process_folder).start()
 
 
 class Loader(App):
@@ -80,10 +78,11 @@ class Loader(App):
         Clock.schedule_interval(self.consume, 0)
         return MyWidget()
 
+    @mainthread
     def consume(self, *args):
         while self.consommables and time() < (Clock.get_time() + MAX_TIME):
             item = self.consommables.pop(0)
-            self.root.ids.text_field.text += item
+            self.root.ids.text_field.text += item +'\n'
 
 if __name__ == '__main__':
     Loader().run()

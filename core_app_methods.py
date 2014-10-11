@@ -33,6 +33,7 @@ def loop_dir(image_directory, widget):
         t_to_add = 'Failed to find any .jpeg, .jpg, .tif or .tiff in the directory'
         text_field.text = text_field.text+t_to_add+'\n'
         progress_bar.value = 1000
+        widget.append_to_consommables(t_to_add)
         return ''
     increment = 1000/cim
     afterloop_list = []
@@ -46,9 +47,8 @@ def loop_dir(image_directory, widget):
             pre_time = p_loop(buffer_path, os.path.join(image_directory,fle), widget.stack_type)
             t_to_add = "file %s pre-processed in %s seconds" %(fle, "{0:.2f}".format(pre_time))
             afterloop_list.append((pre_time, prefix, buffer_path))
-            text_field.text = text_field.text+t_to_add+'\n'
             progress_bar.value = progress_bar.value + increment
-            Clock.schedule_once(widget.update, 0)
+            widget.append_to_consommables(t_to_add)
     dump((image_directory, afterloop_list), open('DO_NOT_TOUCH.dmp','wb'))
     progress_bar.value = 1000
     return ''
@@ -56,8 +56,8 @@ def loop_dir(image_directory, widget):
 
 def loop_fle(image_directory, file, widget):
     progress_bar, text_field = widget.progress_bar, widget.text_field
-    widget.append_to_consommables('starting process\n')
-    progress_bar.value = 500
+    progress_bar.value = 300
+    widget.append_to_consommables('starting to process fle %s'%file)
     afterloop_list = []
     buffer_directory = os.path.join(image_directory,'buffer')
     safe_mkdir(buffer_directory)
@@ -68,13 +68,12 @@ def loop_fle(image_directory, file, widget):
         safe_mkdir(buffer_path)
         pre_time = p_loop(buffer_path, os.path.join(image_directory, file), widget.stack_type)
         t_to_add = "file %s pre-processed in %s seconds" %(file, "{0:.2f}".format(pre_time))
-        widget.append_to_consommables('t_to_add')
         afterloop_list.append((pre_time, prefix, buffer_path))
     else:
         t_to_add = 'file %s has a wrong extension'%file
-    text_field.text = text_field.text+t_to_add+'\n'
+    widget.append_to_consommables(t_to_add)
+    progress_bar.value = 1000
     dump((image_directory, afterloop_list), open('DO_NOT_TOUCH.dmp', 'wb'))
-    # progress_bar.value = 1000
     return ''
 
 
