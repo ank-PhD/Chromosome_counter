@@ -106,7 +106,7 @@ Clustering with correction
 ![alt tag](http://i.imgur.com/dhMt5ce.png)
 
 
-In-depth description of hte algorithm:
+In-depth description of the algorithm:
 --------------------------------------
 This package tries to imitate the functioning of the human primary visual cortex by switching the initial image into the 
 log-intensity scale, filtering out anything that is on the edges or looks like a unbroken nucleus and then performing a
