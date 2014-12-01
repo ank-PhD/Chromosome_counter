@@ -38,8 +38,8 @@
           <span class="credits right">Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></span>
         </div>
 
-        <h3>
-<a id="chromosome-counter" class="anchor" href="#chromosome-counter" aria-hidden="true"><span class="octicon octicon-link"></span></a>Chromosome counter</h3>
+        <h1>
+<a id="chromosome_counter" class="anchor" href="#chromosome_counter" aria-hidden="true"><span class="octicon octicon-link"></span></a>Chromosome_counter</h1>
 
 <p>A simple tool to count chromosomes in the metaphase spreads for mouse and human cells. Allows for manual edition of the segmentation afterwards</p>
 
@@ -48,14 +48,46 @@
 
 <p>This package is intended to run chromosome counting routines after imaging with DAPI staining.</p>
 
-<p>Human and mice chromosome counting is currently supported, but only human chromosome counting is supported through GUI.</p>
+<p>Human and mice chromosome counting is currently supported.</p>
 
-<p>Initial spread files in .tif, .tiff, .jpg, jpeg formats are supported. Images up to 4 Mega pixels are supported. In case
+<p>Initial spread images in .tif, .tiff, .jpg, jpeg formats are supported. Images up to 4 Mega pixels are supported. In case
 you are using a jpeg image as a source, make sure it was compressed with highest quality. Because of image deformation 
 due to compression, the pre-processing is likely to create unlikely patterns. A good way of avoiding this is to save JPEG
 files with GIMP, while setting compression quality to 100% and smoothing to 1 in advanced parameters.</p>
 
 <p>The application was tested on Windows 7 and should work on all the Windows NT (XP or better) workstations</p>
+
+<h2>
+<a id="installation" class="anchor" href="#installation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Installation:</h2>
+
+<p>This package requires the following Python modules:</p>
+
+<ul>
+<li>PIL</li>
+<li>numpy</li>
+<li>scipy</li>
+<li>matplotlib</li>
+<li>scikit-image</li>
+<li>scikit-learn</li>
+<li>mdp</li>
+<li>kivy</li>
+<li>pygame</li>
+<li>pyamg</li>
+</ul>
+
+<p>An optimal way of doing it on Windows platform is to install the Anacoda Python distribution (available
+<a href="https://store.continuum.io/cshop/anaconda/">here</a> ) and then to download the lacking modules from <a href="http://www.lfd.uci.edu/%7Egohlke/pythonlibs/">Gohlke's 
+Unofficial binaries for Python extensions</a>, namely:</p>
+
+<ul>
+<li>mdp</li>
+<li>kivy</li>
+<li>pygame</li>
+<li>pyamg</li>
+</ul>
+
+<p>For installation of the application itself, download the package, unzip or untar it, and launch the GUI.py with python:
+    &gt; python GUI.py</p>
 
 <h2>
 <a id="user-pipeline" class="anchor" href="#user-pipeline" aria-hidden="true"><span class="octicon octicon-link"></span></a>User pipeline:</h2>
@@ -81,7 +113,7 @@ original image, segmentation mask and some program-specific data will be saved</
 <ol>
 <li><p>Once the pre-processing will be finished, you can manually edit the segmentation mask to better fit the reality. As 
 a rule of thumb, all spreads that are easy to count by eye will need no additional post-processing. In case any edition
-is needed, we recommend using GNU Image Manipulation Program (GIMP). It is free source and can be freely downloaded.</p></li>
+is needed, we recommend using GNU Image Manipulation Program (GIMP) or Windows Paint.</p></li>
 <li>
 <p>Once modifications are made, hit the "Process after correction".</p>
 
@@ -106,23 +138,36 @@ you ASAP.</p>
 
 <p>GUI:</p>
 
-<p><img src="http://i.imgur.com/VcdJF2D.png" alt="GUI"></p>
+<p><img src="http://i.imgur.com/XiaQyJI.png" alt="alt tag"></p>
 
 <p>uncorrected Spread mask</p>
 
-<p><img src="http://i.imgur.com/gLC8bBE.png" alt="Spread Mask"></p>
+<p><img src="http://i.imgur.com/bmSeQAD.png" alt="alt tag"></p>
+
+<p>Segmentation without correction</p>
+
+<p><img src="http://i.imgur.com/XnAT9UO.png" alt="alt tag"></p>
 
 <p>corrected Spread Mask</p>
 
-<p><img src="http://i.imgur.com/ikUJLai.png" alt="Spread Mask2"></p>
-
-<p>Clustering without correction</p>
-
-<p><img src="http://i.imgur.com/wE3MxcP.png" alt="Clustering"></p>
+<p><img src="http://i.imgur.com/svb65De.png" alt="alt tag"></p>
 
 <p>Clustering with correction</p>
 
-<p><img src="http://i.imgur.com/1cE7g6Z.png" alt="Correction"></p>
+<p><img src="http://i.imgur.com/dhMt5ce.png" alt="alt tag"></p>
+
+<h2>
+<a id="in-depth-description-of-the-algorithm" class="anchor" href="#in-depth-description-of-the-algorithm" aria-hidden="true"><span class="octicon octicon-link"></span></a>In-depth description of the algorithm:</h2>
+
+<p>This package tries to imitate the functioning of the human primary visual cortex by switching the initial image into the 
+log-intensity scale, filtering out anything that is on the edges or looks like a unbroken nucleus and then performing a
+Gabor Transform on the image to recognize the chromosome arms and spaces between the individual chromosomes. Once the
+process is complete the algorithm performs a clustering by diffusion, avoiding the zone of strongest activation of zones
+where the Gabor filter recognized the chromosome separating zone and starting from the points with the strongest activation
+of the chromosome arm recognition. The resulting clusters are then color-coded and returned to the user.</p>
+
+<p>In case of human chromosome, in addition to the normal Gabor filters, an additional, crossed Gabor filter is used to
+recognize the centromere, provided that on the local level it looks a lot like space between chromosomes.</p>
       </section>
 
     </div>
